@@ -10,6 +10,7 @@ import Message from '../src/models/Message.js';
 const server = http.createServer();
 
 const io = new Server(server, {
+  path: '/api/socket-io',
   cors: { origin: process.env.CLIENT_ORIGIN || '*' },
   transports: ['websocket']
 });
