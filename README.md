@@ -2,6 +2,13 @@
 
 A complete event-management backend built with Node.js, Express, MongoDB/Mongoose, JWT, Socket.io, Jest and Supertest.
 
+## Student
+
+- **Arabic name:** نور وائل محمد
+- **English name:** Nour Wael Mohamed
+- **Student ID:** EYOUTH-30912060106928
+- **Required project name:** EYOUTH-30912060106928-EventPulse
+
 ## Features
 
 - MVC structure with User, Event, Category, Registration and Message models
@@ -38,4 +45,4 @@ Use `Authorization: Bearer TOKEN` for protected routes. Socket clients authentic
 
 ## Testing and delivery
 
-Run `npm test`. Before submission, rename the folder using the real student ID, replace example secrets, deploy to Vercel with `MONGODB_URI`, `JWT_SECRET`, and the other environment variables, then run the seed against Atlas. Never commit `.env`.
+Run `npm test`. Before submission, replace example secrets, deploy to Vercel with `MONGODB_URI`, `JWT_SECRET`, and the other environment variables, then run the seed against Atlas. Never commit `.env`.
