@@ -1,1 +1,36 @@
-{"info":{"name":"EventPulse API","schema":"https://schema.getpostman.com/json/collection/v2.1.0/collection.json"},"variable":[{"key":"baseUrl","value":"http://localhost:3000"},{"key":"token","value":""},{"key":"eventId","value":""}],"item":[{"name":"Health","request":{"method":"GET","url":"{{baseUrl}}/health"}},{"name":"Auth","item":[{"name":"Register","request":{"method":"POST","header":[{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\"name\":\"Test User\",\"email\":\"user@example.com\",\"password\":\"Password123!\"}"},"url":"{{baseUrl}}/api/auth/register"}},{"name":"Login","request":{"method":"POST","header":[{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\"email\":\"admin@eventpulse.local\",\"password\":\"ChangeMe123!\"}"},"url":"{{baseUrl}}/api/auth/login"}}]},{"name":"Events","item":[{"name":"List filtered events","request":{"method":"GET","url":"{{baseUrl}}/api/events?city=Cairo&page=1&limit=10&sort=popular&search=tech"}},{"name":"Create event","request":{"method":"POST","auth":{"type":"bearer","bearer":[{"key":"token","value":"{{token}}","type":"string"}]},"header":[{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\"name\":\"New Event\",\"description\":\"Description\",\"date\":\"2027-06-01T12:00:00Z\",\"city\":\"Cairo\",\"capacity\":50,\"category\":\"CATEGORY_ID\"}"},"url":"{{baseUrl}}/api/events"}},{"name":"Show event","request":{"method":"GET","url":"{{baseUrl}}/api/events/{{eventId}}"}}]},{"name":"Register for event","request":{"method":"POST","auth":{"type":"bearer","bearer":[{"key":"token","value":"{{token}}","type":"string"}]},"url":"{{baseUrl}}/api/registrations/events/{{eventId}}"}},{"name":"My registrations","request":{"method":"GET","auth":{"type":"bearer","bearer":[{"key":"token","value":"{{token}}","type":"string"}]},"url":"{{baseUrl}}/api/registrations"}}]}
+{
+  "info": {"name": "EventPulse API", "description": "Complete EventPulse review collection", "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"},
+  "variable": [
+    {"key": "baseUrl", "value": "https://eyouth-30912060106928-event-pulse.vercel.app"},
+    {"key": "token", "value": ""},
+    {"key": "eventId", "value": ""},
+    {"key": "registrationId", "value": ""},
+    {"key": "categoryId", "value": ""}
+  ],
+  "item": [
+    {"name": "Overview", "request": {"method": "GET", "url": "{{baseUrl}}/"}},
+    {"name": "Health", "request": {"method": "GET", "url": "{{baseUrl}}/health"}},
+    {"name": "Authentication", "item": [
+      {"name": "Register attendee", "request": {"method": "POST", "header": [{"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\"name\":\"Review User\",\"email\":\"review.user@example.com\",\"password\":\"Password123!\"}"}, "url": "{{baseUrl}}/api/auth/register"}},
+      {"name": "Login", "request": {"method": "POST", "header": [{"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\"email\":\"YOUR_EMAIL\",\"password\":\"YOUR_PASSWORD\"}"}, "url": "{{baseUrl}}/api/auth/login"}},
+      {"name": "Current user", "request": {"method": "GET", "auth": {"type": "bearer", "bearer": [{"key": "token", "value": "{{token}}", "type": "string"}]}, "url": "{{baseUrl}}/api/auth/me"}}
+    ]},
+    {"name": "Events", "item": [
+      {"name": "List all events", "request": {"method": "GET", "url": "{{baseUrl}}/api/events"}},
+      {"name": "Combined filters, pagination and search", "request": {"method": "GET", "url": "{{baseUrl}}/api/events?city=Cairo&startDate=2026-01-01&endDate=2028-12-31&page=1&limit=10&sort=popular&search=tech"}},
+      {"name": "Create event (admin)", "request": {"method": "POST", "auth": {"type": "bearer", "bearer": [{"key": "token", "value": "{{token}}", "type": "string"}]}, "header": [{"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\"name\":\"Review Event\",\"description\":\"Created during API review\",\"date\":\"2027-06-01T12:00:00Z\",\"city\":\"Cairo\",\"capacity\":50,\"category\":\"{{categoryId}}\"}"}, "url": "{{baseUrl}}/api/events"}},
+      {"name": "Show event", "request": {"method": "GET", "url": "{{baseUrl}}/api/events/{{eventId}}"}},
+      {"name": "Update event (admin)", "request": {"method": "PATCH", "auth": {"type": "bearer", "bearer": [{"key": "token", "value": "{{token}}", "type": "string"}]}, "header": [{"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\"capacity\":60}"}, "url": "{{baseUrl}}/api/events/{{eventId}}"}},
+      {"name": "Delete event (admin)", "request": {"method": "DELETE", "auth": {"type": "bearer", "bearer": [{"key": "token", "value": "{{token}}", "type": "string"}]}, "url": "{{baseUrl}}/api/events/{{eventId}}"}}
+    ]},
+    {"name": "Registrations", "item": [
+      {"name": "Register for event", "request": {"method": "POST", "auth": {"type": "bearer", "bearer": [{"key": "token", "value": "{{token}}", "type": "string"}]}, "url": "{{baseUrl}}/api/registrations/events/{{eventId}}"}},
+      {"name": "My registrations", "request": {"method": "GET", "auth": {"type": "bearer", "bearer": [{"key": "token", "value": "{{token}}", "type": "string"}]}, "url": "{{baseUrl}}/api/registrations"}},
+      {"name": "Cancel own registration", "request": {"method": "DELETE", "auth": {"type": "bearer", "bearer": [{"key": "token", "value": "{{token}}", "type": "string"}]}, "url": "{{baseUrl}}/api/registrations/{{registrationId}}"}}
+    ]},
+    {"name": "Announcements", "item": [
+      {"name": "Announcement history", "request": {"method": "GET", "url": "{{baseUrl}}/api/events/{{eventId}}/messages"}},
+      {"name": "Create and broadcast announcement (admin)", "request": {"method": "POST", "auth": {"type": "bearer", "bearer": [{"key": "token", "value": "{{token}}", "type": "string"}]}, "header": [{"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\"text\":\"Event starts in 15 minutes\"}"}, "url": "{{baseUrl}}/api/events/{{eventId}}/messages"}}
+    ]}
+  ]
+}

@@ -1,28 +1,86 @@
 /**
  * @openapi
+ * /:
+ *   get:
+ *     summary: API overview
+ *     responses: {'200': {description: API links and version}}
  * /health:
- *   get: {summary: Health check, responses: {'200': {description: Server and database state}}}
+ *   get:
+ *     summary: Health check
+ *     responses: {'200': {description: Server and database state}}
  * /api/auth/register:
- *   post: {summary: Register attendee, requestBody: {required: true, content: {application/json: {schema: {type: object, required: [name,email,password], properties: {name: {type: string}, email: {type: string}, password: {type: string}}}}}}, responses: {'201': {description: Registered}, '422': {description: Invalid input}}}
+ *   post:
+ *     summary: Register an attendee
+ *     requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/RegisterInput'}}}}
+ *     responses: {'201': {description: User and JWT}, '409': {description: Duplicate email}, '422': {description: Structured validation errors}}
  * /api/auth/login:
- *   post: {summary: Login, responses: {'200': {description: JWT returned}, '401': {description: Invalid credentials}}}
+ *   post:
+ *     summary: Log in
+ *     requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/LoginInput'}}}}
+ *     responses: {'200': {description: User and JWT}, '401': {description: Invalid credentials}, '422': {description: Invalid input}}
+ * /api/auth/me:
+ *   get:
+ *     summary: Current authenticated user
+ *     security: [{bearerAuth: []}]
+ *     responses: {'200': {description: Current user}, '401': {description: Missing, invalid or expired token}}
  * /api/events:
  *   get:
- *     summary: List and filter events
- *     parameters: [{in: query, name: category, schema: {type: string}}, {in: query, name: city, schema: {type: string}}, {in: query, name: startDate, schema: {type: string}}, {in: query, name: endDate, schema: {type: string}}, {in: query, name: page, schema: {type: integer}}, {in: query, name: limit, schema: {type: integer}}, {in: query, name: sort, schema: {type: string}}, {in: query, name: search, schema: {type: string}}]
- *     responses: {'200': {description: Paginated events}}
- *   post: {summary: Create event (admin), security: [{bearerAuth: []}], requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/Event'}}}}, responses: {'201': {description: Created}, '403': {description: Forbidden}}}
+ *     summary: List, filter, search, sort and paginate events
+ *     parameters:
+ *       - {in: query, name: category, schema: {type: string}, description: Category ObjectId}
+ *       - {in: query, name: city, schema: {type: string}}
+ *       - {in: query, name: startDate, schema: {type: string, format: date-time}}
+ *       - {in: query, name: endDate, schema: {type: string, format: date-time}}
+ *       - {in: query, name: search, schema: {type: string}, description: Searches name and description}
+ *       - {in: query, name: sort, schema: {type: string, enum: [date, -date, popular]}}
+ *       - {in: query, name: page, schema: {type: integer, minimum: 1}}
+ *       - {in: query, name: limit, schema: {type: integer, minimum: 1, maximum: 100}}
+ *     responses: {'200': {description: Event list and pagination metadata}}
+ *   post:
+ *     summary: Create an event (admin only)
+ *     security: [{bearerAuth: []}]
+ *     requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/EventInput'}}}}
+ *     responses: {'201': {description: Created event with populated category}, '401': {description: Unauthenticated}, '403': {description: Forbidden}, '422': {description: Invalid fields}}
  * /api/events/{id}:
- *   get: {summary: Show event, parameters: [{in: path, name: id, required: true, schema: {type: string}}], responses: {'200': {description: Event}, '404': {description: Not found}}}
- *   patch: {summary: Update event (admin), security: [{bearerAuth: []}], parameters: [{in: path, name: id, required: true, schema: {type: string}}], responses: {'200': {description: Updated}}}
- *   delete: {summary: Delete event (admin), security: [{bearerAuth: []}], parameters: [{in: path, name: id, required: true, schema: {type: string}}], responses: {'204': {description: Deleted}}}
- * /api/registrations/events/{eventId}:
- *   post: {summary: Register for event, security: [{bearerAuth: []}], parameters: [{in: path, name: eventId, required: true, schema: {type: string}}], responses: {'201': {description: Registered}, '409': {description: Full or duplicate}}}
+ *   parameters: [{in: path, name: id, required: true, schema: {type: string}}]
+ *   get:
+ *     summary: Show an event
+ *     responses: {'200': {description: Event with populated category}, '404': {description: Event not found}, '422': {description: Invalid ObjectId}}
+ *   patch:
+ *     summary: Partially update an event (admin only)
+ *     security: [{bearerAuth: []}]
+ *     requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/EventInput'}}}}
+ *     responses: {'200': {description: Updated event}, '401': {description: Unauthenticated}, '403': {description: Forbidden}, '404': {description: Event not found}, '422': {description: Invalid fields}}
+ *   delete:
+ *     summary: Delete an event (admin only)
+ *     security: [{bearerAuth: []}]
+ *     responses: {'204': {description: Deleted}, '401': {description: Unauthenticated}, '403': {description: Forbidden}, '404': {description: Event not found}, '422': {description: Invalid ObjectId}}
  * /api/registrations:
- *   get: {summary: My registrations, security: [{bearerAuth: []}], responses: {'200': {description: Registrations}}}
+ *   get:
+ *     summary: List the current user's registrations
+ *     security: [{bearerAuth: []}]
+ *     responses: {'200': {description: Registrations with event and category}, '401': {description: Unauthenticated}}
+ * /api/registrations/events/{eventId}:
+ *   post:
+ *     summary: Register the current attendee for an event
+ *     security: [{bearerAuth: []}]
+ *     parameters: [{in: path, name: eventId, required: true, schema: {type: string}}]
+ *     responses: {'201': {description: Registration created}, '401': {description: Unauthenticated}, '404': {description: Event not found}, '409': {description: Event full or duplicate registration}, '422': {description: Invalid ObjectId}}
  * /api/registrations/{id}:
- *   delete: {summary: Cancel own registration, security: [{bearerAuth: []}], parameters: [{in: path, name: id, required: true, schema: {type: string}}], responses: {'204': {description: Cancelled}}}
+ *   delete:
+ *     summary: Cancel an owned registration and free capacity
+ *     security: [{bearerAuth: []}]
+ *     parameters: [{in: path, name: id, required: true, schema: {type: string}}]
+ *     responses: {'204': {description: Cancelled}, '401': {description: Unauthenticated}, '404': {description: Not found or not owned}, '422': {description: Invalid ObjectId}}
  * /api/events/{eventId}/messages:
- *   get: {summary: Announcement history, parameters: [{in: path, name: eventId, required: true, schema: {type: string}}], responses: {'200': {description: Messages}}}
- *   post: {summary: Broadcast announcement (admin), security: [{bearerAuth: []}], parameters: [{in: path, name: eventId, required: true, schema: {type: string}}], responses: {'201': {description: Sent and stored}}}
+ *   get:
+ *     summary: List announcement history in chronological order
+ *     parameters: [{in: path, name: eventId, required: true, schema: {type: string}}]
+ *     responses: {'200': {description: Stored announcements}, '422': {description: Invalid ObjectId}}
+ *   post:
+ *     summary: Save and broadcast an announcement (admin only)
+ *     security: [{bearerAuth: []}]
+ *     parameters: [{in: path, name: eventId, required: true, schema: {type: string}}]
+ *     requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/MessageInput'}}}}
+ *     responses: {'201': {description: Announcement saved and emitted}, '401': {description: Unauthenticated}, '403': {description: Forbidden}, '404': {description: Event not found}, '422': {description: Invalid input}}
  */

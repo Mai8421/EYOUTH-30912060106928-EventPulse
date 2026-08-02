@@ -1,5 +1,6 @@
 const r=require('express').Router();const {body,param}=require('express-validator');const c=require('../controllers/eventController');const m=require('../controllers/messageController');const a=require('../middleware/auth');const v=require('../middleware/validate');const h=require('../utils/asyncHandler');
 const fields=[body('name').trim().notEmpty(),body('description').trim().notEmpty(),body('date').isISO8601(),body('city').trim().notEmpty(),body('capacity').isInt({min:1}),body('category').isMongoId()];
+const updateFields=[body('name').optional().trim().notEmpty(),body('description').optional().trim().notEmpty(),body('date').optional().isISO8601(),body('city').optional().trim().notEmpty(),body('capacity').optional().isInt({min:1}),body('category').optional().isMongoId()];
 r.route('/').get(h(c.list)).post(a.requireAuth,a.requireRole('admin'),fields,v,h(c.create));
-r.route('/:id').get(param('id').isMongoId(),v,h(c.get)).patch(a.requireAuth,a.requireRole('admin'),param('id').isMongoId(),v,h(c.update)).delete(a.requireAuth,a.requireRole('admin'),param('id').isMongoId(),v,h(c.remove));
+r.route('/:id').get(param('id').isMongoId(),v,h(c.get)).patch(a.requireAuth,a.requireRole('admin'),param('id').isMongoId(),updateFields,v,h(c.update)).delete(a.requireAuth,a.requireRole('admin'),param('id').isMongoId(),v,h(c.remove));
 r.route('/:eventId/messages').get(param('eventId').isMongoId(),v,h(m.list)).post(a.requireAuth,a.requireRole('admin'),param('eventId').isMongoId(),body('text').trim().notEmpty().isLength({max:1000}),v,h(m.create));module.exports=r;

@@ -48,3 +48,9 @@ For the Vercel deployment, connect Socket.io to the production domain with `path
 ## Testing and delivery
 
 Run `npm test`. Before submission, replace example secrets, deploy to Vercel with `MONGODB_URI`, `JWT_SECRET`, and the other environment variables, then run the seed against Atlas. Never commit `.env`.
+
+### Final test evidence
+
+- Jest unit tests cover `AppError` and `asyncHandler` success/failure behavior.
+- Supertest integration tests cover event creation, listing, combined filtering, category population, role protection, 422 validation, registration uniqueness, capacity, cancellation and freed-place reuse.
+- Final verification: **8 tests passed in 2 suites** and production `/`, `/health`, `/api/events`, and `/api-docs` returned HTTP 200.
