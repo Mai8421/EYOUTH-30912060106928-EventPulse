@@ -23,7 +23,7 @@ A complete event-management backend built with Node.js, Express, MongoDB/Mongoos
 
 ## Local setup
 
-1. Install Node.js 20+, then run `npm install`.
+1. Install Node.js 22+, then run `npm install`.
 2. Copy `.env.example` to `.env` and set `MONGODB_URI` and a long `JWT_SECRET`.
 3. Run `npm run seed`, then `npm run dev`.
 4. Open `http://localhost:3000/api-docs`.
