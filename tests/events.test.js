@@ -1,12 +1,160 @@
-process.env.NODE_ENV='test';process.env.JWT_SECRET='test-secret-long-enough';jest.setTimeout(180000);const request=require('supertest');const {MongoMemoryServer}=require('mongodb-memory-server');const mongoose=require('mongoose');const jwt=require('jsonwebtoken');const app=require('../src/app');const User=require('../src/models/User');const Category=require('../src/models/Category');const Event=require('../src/models/Event');const Registration=require('../src/models/Registration');
-let mongo,admin,attendee,category,event;const token=u=>jwt.sign({id:u.id,role:u.role},process.env.JWT_SECRET);
-beforeAll(async()=>{mongo=await MongoMemoryServer.create();await mongoose.connect(mongo.getUri());admin=await User.create({name:'Admin',email:'admin@test.com',password:'password1',role:'admin'});attendee=await User.create({name:'Guest',email:'guest@test.com',password:'password1'});category=await Category.create({name:'Tech'});event=await Event.create({name:'Node Conference',description:'Node and Mongo developers',date:'2027-01-10',city:'Cairo',capacity:1,category:category.id,createdBy:admin.id})});afterAll(async()=>{if(mongoose.connection.readyState)await mongoose.disconnect();if(mongo)await mongo.stop()});
-test('lists, filters and populates events',async()=>{const r=await request(app).get('/api/events?city=Cairo&search=Node&page=1&limit=5');expect(r.status).toBe(200);expect(r.body.data).toHaveLength(1);expect(r.body.data[0].category.name).toBe('Tech');expect(r.body.meta.total).toBe(1)});
-test('attendee cannot create an event',async()=>{const r=await request(app).post('/api/events').set('Authorization',`Bearer ${token(attendee)}`).send({});expect(r.status).toBe(403)});
-test('admin creates an event and invalid input returns 422',async()=>{expect((await request(app).post('/api/events').set('Authorization',`Bearer ${token(admin)}`).send({name:'Bad'})).status).toBe(422);const r=await request(app).post('/api/events').set('Authorization',`Bearer ${token(admin)}`).send({name:'Arts Day',description:'Creative event',date:'2027-02-02',city:'Giza',capacity:20,category:category.id});expect(r.status).toBe(201)});
-test('event update validates fields and accepts a valid partial update',async()=>{let r=await request(app).patch(`/api/events/${event.id}`).set('Authorization',`Bearer ${token(admin)}`).send({capacity:0});expect(r.status).toBe(422);expect(r.body.errors[0].field).toBe('capacity');r=await request(app).patch(`/api/events/${event.id}`).set('Authorization',`Bearer ${token(admin)}`).send({capacity:2});expect(r.status).toBe(200);expect(r.body.data.capacity).toBe(2)});
-test('registration enforces uniqueness and capacity, cancellation frees place',async()=>{let r=await request(app).post(`/api/registrations/events/${event.id}`).set('Authorization',`Bearer ${token(attendee)}`);expect(r.status).toBe(201);const registrationId=r.body.data._id;r=await request(app).post(`/api/registrations/events/${event.id}`).set('Authorization',`Bearer ${token(attendee)}`);expect(r.status).toBe(409);expect((await request(app).delete(`/api/registrations/${registrationId}`).set('Authorization',`Bearer ${token(attendee)}`)).status).toBe(204);expect((await request(app).post(`/api/registrations/events/${event.id}`).set('Authorization',`Bearer ${token(attendee)}`)).status).toBe(201)});
-test('GET /api/events/:id returns a single event with populated category',async()=>{const r=await request(app).get(`/api/events/${event.id}`);expect(r.status).toBe(200);expect(r.body.data._id).toBe(event.id);expect(r.body.data.category.name).toBe('Tech')});
-test('GET /api/events returns 422 for invalid query parameters',async()=>{const r=await request(app).get('/api/events?startDate=not-a-date&limit=abc');expect(r.status).toBe(422)});
-test('a second user is rejected with 409 when the event is at capacity',async()=>{const cap1=await Event.create({name:'Tiny Event',description:'One slot only',date:'2027-12-01',city:'Cairo',capacity:1,category:category.id,createdBy:admin.id});const user2=await User.create({name:'User2',email:'user2@test.com',password:'password1'});await request(app).post(`/api/registrations/events/${cap1.id}`).set('Authorization',`Bearer ${token(attendee)}`);const r=await request(app).post(`/api/registrations/events/${cap1.id}`).set('Authorization',`Bearer ${token(user2)}`);expect(r.status).toBe(409)});
-test('deleting an event removes its registrations and messages',async()=>{const tmp=await Event.create({name:'Temp Event',description:'Will be deleted',date:'2027-12-15',city:'Giza',capacity:5,category:category.id,createdBy:admin.id});await request(app).post(`/api/registrations/events/${tmp.id}`).set('Authorization',`Bearer ${token(attendee)}`);await request(app).delete(`/api/events/${tmp.id}`).set('Authorization',`Bearer ${token(admin)}`);expect(await Registration.find({event:tmp.id})).toHaveLength(0)});
+process.env.NODE_ENV = 'test';
+process.env.JWT_SECRET = 'test-secret-long-enough';
+jest.setTimeout(180000);
+
+const request = require('supertest');
+const { MongoMemoryServer } = require('mongodb-memory-server');
+const mongoose = require('mongoose');
+const jwt = require('jsonwebtoken');
+const app = require('../src/app');
+const User = require('../src/models/User');
+const Category = require('../src/models/Category');
+const Event = require('../src/models/Event');
+const Registration = require('../src/models/Registration');
+
+let mongo, admin, attendee, category, event;
+const token = (u) => jwt.sign({ id: u.id, role: u.role }, process.env.JWT_SECRET);
+
+beforeAll(async () => {
+  mongo = await MongoMemoryServer.create();
+  await mongoose.connect(mongo.getUri());
+  admin = await User.create({ name: 'Admin', email: 'admin@test.com', password: 'password1', role: 'admin' });
+  attendee = await User.create({ name: 'Guest', email: 'guest@test.com', password: 'password1' });
+  category = await Category.create({ name: 'Tech' });
+  event = await Event.create({
+    name: 'Node Conference',
+    description: 'Node and Mongo developers',
+    date: '2027-01-10',
+    city: 'Cairo',
+    capacity: 1,
+    category: category.id,
+    createdBy: admin.id,
+  });
+});
+
+afterAll(async () => {
+  if (mongoose.connection.readyState) await mongoose.disconnect();
+  if (mongo) await mongo.stop();
+});
+
+test('lists, filters and populates events', async () => {
+  const r = await request(app).get('/api/events?city=Cairo&search=Node&page=1&limit=5');
+  expect(r.status).toBe(200);
+  expect(r.body.data).toHaveLength(1);
+  expect(r.body.data[0].category.name).toBe('Tech');
+  expect(r.body.meta.total).toBe(1);
+});
+
+test('attendee cannot create an event', async () => {
+  const r = await request(app)
+    .post('/api/events')
+    .set('Authorization', `Bearer ${token(attendee)}`)
+    .send({});
+  expect(r.status).toBe(403);
+});
+
+test('admin creates an event and invalid input returns 422', async () => {
+  const bad = await request(app)
+    .post('/api/events')
+    .set('Authorization', `Bearer ${token(admin)}`)
+    .send({ name: 'Bad' });
+  expect(bad.status).toBe(422);
+
+  const r = await request(app)
+    .post('/api/events')
+    .set('Authorization', `Bearer ${token(admin)}`)
+    .send({ name: 'Arts Day', description: 'Creative event', date: '2027-02-02', city: 'Giza', capacity: 20, category: category.id });
+  expect(r.status).toBe(201);
+});
+
+test('event update validates fields and accepts a valid partial update', async () => {
+  let r = await request(app)
+    .patch(`/api/events/${event.id}`)
+    .set('Authorization', `Bearer ${token(admin)}`)
+    .send({ capacity: 0 });
+  expect(r.status).toBe(422);
+  expect(r.body.errors[0].field).toBe('capacity');
+
+  r = await request(app)
+    .patch(`/api/events/${event.id}`)
+    .set('Authorization', `Bearer ${token(admin)}`)
+    .send({ capacity: 2 });
+  expect(r.status).toBe(200);
+  expect(r.body.data.capacity).toBe(2);
+});
+
+test('registration enforces uniqueness and capacity, cancellation frees place', async () => {
+  let r = await request(app)
+    .post(`/api/registrations/events/${event.id}`)
+    .set('Authorization', `Bearer ${token(attendee)}`);
+  expect(r.status).toBe(201);
+  const registrationId = r.body.data._id;
+
+  r = await request(app)
+    .post(`/api/registrations/events/${event.id}`)
+    .set('Authorization', `Bearer ${token(attendee)}`);
+  expect(r.status).toBe(409);
+
+  expect(
+    (await request(app)
+      .delete(`/api/registrations/${registrationId}`)
+      .set('Authorization', `Bearer ${token(attendee)}`)).status
+  ).toBe(204);
+
+  expect(
+    (await request(app)
+      .post(`/api/registrations/events/${event.id}`)
+      .set('Authorization', `Bearer ${token(attendee)}`)).status
+  ).toBe(201);
+});
+
+test('GET /api/events/:id returns a single event with populated category', async () => {
+  const r = await request(app).get(`/api/events/${event.id}`);
+  expect(r.status).toBe(200);
+  expect(r.body.data._id).toBe(event.id);
+  expect(r.body.data.category.name).toBe('Tech');
+});
+
+test('GET /api/events returns 422 for invalid query parameters', async () => {
+  const r = await request(app).get('/api/events?startDate=not-a-date&limit=abc');
+  expect(r.status).toBe(422);
+});
+
+test('a second user is rejected with 409 when the event is at capacity', async () => {
+  const cap1 = await Event.create({
+    name: 'Tiny Event',
+    description: 'One slot only',
+    date: '2027-12-01',
+    city: 'Cairo',
+    capacity: 1,
+    category: category.id,
+    createdBy: admin.id,
+  });
+  const user2 = await User.create({ name: 'User2', email: 'user2@test.com', password: 'password1' });
+  await request(app)
+    .post(`/api/registrations/events/${cap1.id}`)
+    .set('Authorization', `Bearer ${token(attendee)}`);
+  const r = await request(app)
+    .post(`/api/registrations/events/${cap1.id}`)
+    .set('Authorization', `Bearer ${token(user2)}`);
+  expect(r.status).toBe(409);
+});
+
+test('deleting an event removes its registrations and messages', async () => {
+  const tmp = await Event.create({
+    name: 'Temp Event',
+    description: 'Will be deleted',
+    date: '2027-12-15',
+    city: 'Giza',
+    capacity: 5,
+    category: category.id,
+    createdBy: admin.id,
+  });
+  await request(app)
+    .post(`/api/registrations/events/${tmp.id}`)
+    .set('Authorization', `Bearer ${token(attendee)}`);
+  await request(app)
+    .delete(`/api/events/${tmp.id}`)
+    .set('Authorization', `Bearer ${token(admin)}`);
+  expect(await Registration.find({ event: tmp.id })).toHaveLength(0);
+});

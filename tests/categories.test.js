@@ -1,9 +1,77 @@
-process.env.NODE_ENV='test';process.env.JWT_SECRET='test-secret-long-enough';jest.setTimeout(180000);const request=require('supertest');const {MongoMemoryServer}=require('mongodb-memory-server');const mongoose=require('mongoose');const jwt=require('jsonwebtoken');const app=require('../src/app');const User=require('../src/models/User');const Category=require('../src/models/Category');
-let mongo,admin;const token=u=>jwt.sign({id:u.id,role:u.role},process.env.JWT_SECRET);
-beforeAll(async()=>{mongo=await MongoMemoryServer.create();await mongoose.connect(mongo.getUri());admin=await User.create({name:'Admin',email:'admin@cat.test',password:'password1',role:'admin'});await Category.create([{name:'Technology',description:'Tech events'},{name:'Business',description:'Business events'},{name:'Arts',description:'Arts events'}])});afterAll(async()=>{if(mongoose.connection.readyState)await mongoose.disconnect();if(mongo)await mongo.stop()});
-test('lists all categories sorted by name',async()=>{const r=await request(app).get('/api/categories');expect(r.status).toBe(200);expect(r.body.data).toHaveLength(3);expect(r.body.data[0].name).toBe('Arts');expect(r.body.data.map(c=>c.__v)).toEqual([undefined,undefined,undefined])});
-test('GET /api/categories/:id returns a single category',async()=>{const all=await request(app).get('/api/categories');const id=all.body.data[0]._id;const r=await request(app).get(`/api/categories/${id}`);expect(r.status).toBe(200);expect(r.body.data._id).toBe(id)});
-test('GET /api/categories/:id returns 404 for unknown category',async()=>{const r=await request(app).get(`/api/categories/${new mongoose.Types.ObjectId()}`);expect(r.status).toBe(404)});
-test('admin can create a category',async()=>{const r=await request(app).post('/api/categories').set('Authorization',`Bearer ${token(admin)}`).send({name:'Sports',description:'Sports events'});expect(r.status).toBe(201);expect(r.body.data.name).toBe('Sports')});
-test('duplicate category name returns 409',async()=>{const r=await request(app).post('/api/categories').set('Authorization',`Bearer ${token(admin)}`).send({name:'Technology'});expect(r.status).toBe(409)});
-test('attendee cannot create a category',async()=>{const attendee=await User.create({name:'Guest',email:'guest@cat.test',password:'password1'});const r=await request(app).post('/api/categories').set('Authorization',`Bearer ${token(attendee)}`).send({name:'New Category'});expect(r.status).toBe(403)});
+process.env.NODE_ENV = 'test';
+process.env.JWT_SECRET = 'test-secret-long-enough';
+jest.setTimeout(180000);
+
+const request = require('supertest');
+const { MongoMemoryServer } = require('mongodb-memory-server');
+const mongoose = require('mongoose');
+const jwt = require('jsonwebtoken');
+const app = require('../src/app');
+const User = require('../src/models/User');
+const Category = require('../src/models/Category');
+
+let mongo, admin;
+const token = (u) => jwt.sign({ id: u.id, role: u.role }, process.env.JWT_SECRET);
+
+beforeAll(async () => {
+  mongo = await MongoMemoryServer.create();
+  await mongoose.connect(mongo.getUri());
+  admin = await User.create({ name: 'Admin', email: 'admin@cat.test', password: 'password1', role: 'admin' });
+  await Category.create([
+    { name: 'Technology', description: 'Tech events' },
+    { name: 'Business', description: 'Business events' },
+    { name: 'Arts', description: 'Arts events' },
+  ]);
+});
+
+afterAll(async () => {
+  if (mongoose.connection.readyState) await mongoose.disconnect();
+  if (mongo) await mongo.stop();
+});
+
+test('lists all categories sorted by name', async () => {
+  const r = await request(app).get('/api/categories');
+  expect(r.status).toBe(200);
+  expect(r.body.data).toHaveLength(3);
+  expect(r.body.data[0].name).toBe('Arts');
+  expect(r.body.data.map((c) => c.__v)).toEqual([undefined, undefined, undefined]);
+});
+
+test('GET /api/categories/:id returns a single category', async () => {
+  const all = await request(app).get('/api/categories');
+  const id = all.body.data[0]._id;
+  const r = await request(app).get(`/api/categories/${id}`);
+  expect(r.status).toBe(200);
+  expect(r.body.data._id).toBe(id);
+});
+
+test('GET /api/categories/:id returns 404 for unknown category', async () => {
+  const r = await request(app).get(`/api/categories/${new mongoose.Types.ObjectId()}`);
+  expect(r.status).toBe(404);
+});
+
+test('admin can create a category', async () => {
+  const r = await request(app)
+    .post('/api/categories')
+    .set('Authorization', `Bearer ${token(admin)}`)
+    .send({ name: 'Sports', description: 'Sports events' });
+  expect(r.status).toBe(201);
+  expect(r.body.data.name).toBe('Sports');
+});
+
+test('duplicate category name returns 409', async () => {
+  const r = await request(app)
+    .post('/api/categories')
+    .set('Authorization', `Bearer ${token(admin)}`)
+    .send({ name: 'Technology' });
+  expect(r.status).toBe(409);
+});
+
+test('attendee cannot create a category', async () => {
+  const attendee = await User.create({ name: 'Guest', email: 'guest@cat.test', password: 'password1' });
+  const r = await request(app)
+    .post('/api/categories')
+    .set('Authorization', `Bearer ${token(attendee)}`)
+    .send({ name: 'New Category' });
+  expect(r.status).toBe(403);
+});
