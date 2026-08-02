@@ -1,0 +1,1 @@
+require('dotenv').config();const app=require('../src/app');const connectDB=require('../src/config/db');let connection;module.exports=async(req,res)=>{try{connection=connection||connectDB();await connection;return app(req,res)}catch(e){return res.status(503).json({success:false,message:'Database connection failed'})}};
