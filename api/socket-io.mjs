@@ -1,16 +1,13 @@
-require('dotenv').config();
-const http = require('http');
-const jwt = require('jsonwebtoken');
-const { Server } = require('socket.io');
-const connectDB = require('../src/config/db');
-const User = require('../src/models/User');
-const Event = require('../src/models/Event');
-const Message = require('../src/models/Message');
+import 'dotenv/config';
+import http from 'http';
+import jwt from 'jsonwebtoken';
+import { Server } from 'socket.io';
+import connectDB from '../src/config/db.js';
+import User from '../src/models/User.js';
+import Event from '../src/models/Event.js';
+import Message from '../src/models/Message.js';
 
-const server = http.createServer((_req, res) => {
-  res.writeHead(200, { 'content-type': 'application/json' });
-  res.end(JSON.stringify({ service: 'EventPulse Socket.io', status: 'ok' }));
-});
+const server = http.createServer();
 
 const io = new Server(server, {
   cors: { origin: process.env.CLIENT_ORIGIN || '*' },
@@ -57,4 +54,4 @@ io.on('connection', (socket) => {
   });
 });
 
-module.exports = server;
+export default server;
