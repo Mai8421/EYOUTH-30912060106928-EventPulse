@@ -1,2 +1,48 @@
-require('dotenv').config();const http=require('http');const {Server}=require('socket.io');const jwt=require('jsonwebtoken');const app=require('./app');const connectDB=require('./config/db');const Event=require('./models/Event');
-async function start(){await connectDB();const server=http.createServer(app);const io=new Server(server,{cors:{origin:process.env.CLIENT_ORIGIN||'*'}});app.set('io',io);io.use((socket,next)=>{try{socket.user=jwt.verify(socket.handshake.auth?.token,process.env.JWT_SECRET);next()}catch{next(new Error('Authentication required'))}});io.on('connection',socket=>{socket.on('join-event',async(id,ack=()=>{})=>{try{if(!await Event.exists({_id:id}))return ack({success:false,message:'Event not found'});socket.join(`event:${id}`);ack({success:true,room:`event:${id}`})}catch{ack({success:false,message:'Unable to join event'})}});socket.on('disconnect',()=>{})});server.listen(process.env.PORT||3000,()=>console.log(`EventPulse listening on ${process.env.PORT||3000}`))}start().catch(e=>{console.error('Startup failed:',e.message);process.exit(1)});
+require('dotenv').config();
+const http = require('http');
+const { Server } = require('socket.io');
+const jwt = require('jsonwebtoken');
+const app = require('./app');
+const connectDB = require('./config/db');
+const Event = require('./models/Event');
+
+async function start() {
+  await connectDB();
+
+  const server = http.createServer(app);
+  const io = new Server(server, { cors: { origin: process.env.CLIENT_ORIGIN || '*' } });
+  app.set('io', io);
+
+  io.use((socket, next) => {
+    try {
+      socket.user = jwt.verify(socket.handshake.auth?.token, process.env.JWT_SECRET);
+      next();
+    } catch {
+      next(new Error('Authentication required'));
+    }
+  });
+
+  io.on('connection', (socket) => {
+    socket.on('join-event', async (id, ack = () => {}) => {
+      try {
+        if (!(await Event.exists({ _id: id }))) {
+          return ack({ success: false, message: 'Event not found' });
+        }
+        socket.join(`event:${id}`);
+        ack({ success: true, room: `event:${id}` });
+      } catch {
+        ack({ success: false, message: 'Unable to join event' });
+      }
+    });
+
+    socket.on('disconnect', () => {});
+  });
+
+  const port = process.env.PORT || 3000;
+  server.listen(port, () => console.log(`EventPulse listening on ${port}`));
+}
+
+start().catch((e) => {
+  console.error('Startup failed:', e.message);
+  process.exit(1);
+});

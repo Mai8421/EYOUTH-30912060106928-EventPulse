@@ -1,1 +1,23 @@
-const r=require('express').Router();const {param}=require('express-validator');const c=require('../controllers/registrationController');const a=require('../middleware/auth');const v=require('../middleware/validate');const h=require('../utils/asyncHandler');r.use(a.requireAuth);r.get('/',h(c.mine));r.post('/events/:eventId',param('eventId').isMongoId(),v,h(c.create));r.delete('/:id',param('id').isMongoId(),v,h(c.cancel));module.exports=r;
+const { Router } = require('express');
+const { param } = require('express-validator');
+const c = require('../controllers/registrationController');
+const { requireAuth } = require('../middleware/auth');
+const validate = require('../middleware/validate');
+const asyncHandler = require('../utils/asyncHandler');
+
+const router = Router();
+
+router.use(requireAuth);
+
+router.get('/', asyncHandler(c.mine));
+
+router.post(
+  '/events/:eventId',
+  param('eventId').isMongoId(),
+  validate,
+  asyncHandler(c.create)
+);
+
+router.delete('/:id', param('id').isMongoId(), validate, asyncHandler(c.cancel));
+
+module.exports = router;

@@ -1,2 +1,72 @@
-require('dotenv').config();const connectDB=require('../config/db');const Category=require('../models/Category');const Event=require('../models/Event');const User=require('../models/User');
-(async()=>{try{await connectDB();const admin=await User.findOne({email:process.env.ADMIN_EMAIL||'admin@eventpulse.local'})||await User.create({name:'EventPulse Admin',email:process.env.ADMIN_EMAIL||'admin@eventpulse.local',password:process.env.ADMIN_PASSWORD||'ChangeMe123!',role:'admin'});const names=['Technology','Business','Arts'];const categories={};for(const name of names)categories[name]=await Category.findOneAndUpdate({name},{$setOnInsert:{description:`${name} events`}},{upsert:true,new:true});const samples=[{name:'Cairo Tech Summit',description:'Developers and founders meet in Cairo.',city:'Cairo',date:'2027-02-10',capacity:100,category:categories.Technology.id},{name:'Startup Finance Workshop',description:'Practical finance for new businesses.',city:'Alexandria',date:'2027-03-15',capacity:40,category:categories.Business.id},{name:'Digital Arts Night',description:'An evening of digital creativity.',city:'Giza',date:'2027-04-20',capacity:75,category:categories.Arts.id}];for(const e of samples)await Event.findOneAndUpdate({name:e.name},{$setOnInsert:{...e,createdBy:admin.id}},{upsert:true,new:true});console.log('Seed complete (safe to run again)');process.exit(0)}catch(e){console.error(e);process.exit(1)}})();
+require('dotenv').config();
+const connectDB = require('../config/db');
+const Category = require('../models/Category');
+const Event = require('../models/Event');
+const User = require('../models/User');
+
+(async () => {
+  try {
+    await connectDB();
+
+    const adminEmail = process.env.ADMIN_EMAIL || 'admin@eventpulse.local';
+    const admin =
+      (await User.findOne({ email: adminEmail })) ||
+      (await User.create({
+        name: 'EventPulse Admin',
+        email: adminEmail,
+        password: process.env.ADMIN_PASSWORD || 'ChangeMe123!',
+        role: 'admin',
+      }));
+
+    const categoryNames = ['Technology', 'Business', 'Arts'];
+    const categories = {};
+    for (const name of categoryNames) {
+      categories[name] = await Category.findOneAndUpdate(
+        { name },
+        { $setOnInsert: { description: `${name} events` } },
+        { upsert: true, new: true }
+      );
+    }
+
+    const samples = [
+      {
+        name: 'Cairo Tech Summit',
+        description: 'Developers and founders meet in Cairo.',
+        city: 'Cairo',
+        date: '2027-02-10',
+        capacity: 100,
+        category: categories.Technology.id,
+      },
+      {
+        name: 'Startup Finance Workshop',
+        description: 'Practical finance for new businesses.',
+        city: 'Alexandria',
+        date: '2027-03-15',
+        capacity: 40,
+        category: categories.Business.id,
+      },
+      {
+        name: 'Digital Arts Night',
+        description: 'An evening of digital creativity.',
+        city: 'Giza',
+        date: '2027-04-20',
+        capacity: 75,
+        category: categories.Arts.id,
+      },
+    ];
+
+    for (const e of samples) {
+      await Event.findOneAndUpdate(
+        { name: e.name },
+        { $setOnInsert: { ...e, createdBy: admin.id } },
+        { upsert: true, new: true }
+      );
+    }
+
+    console.log('Seed complete (safe to run again)');
+    process.exit(0);
+  } catch (e) {
+    console.error(e);
+    process.exit(1);
+  }
+})();

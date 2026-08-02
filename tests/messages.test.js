@@ -1,9 +1,86 @@
-process.env.NODE_ENV='test';process.env.JWT_SECRET='test-secret-long-enough';jest.setTimeout(180000);const request=require('supertest');const {MongoMemoryServer}=require('mongodb-memory-server');const mongoose=require('mongoose');const jwt=require('jsonwebtoken');const app=require('../src/app');const User=require('../src/models/User');const Category=require('../src/models/Category');const Event=require('../src/models/Event');
-let mongo,admin,attendee,event;const token=u=>jwt.sign({id:u.id,role:u.role},process.env.JWT_SECRET);
-beforeAll(async()=>{mongo=await MongoMemoryServer.create();await mongoose.connect(mongo.getUri());admin=await User.create({name:'Admin',email:'admin@test.com',password:'password1',role:'admin'});attendee=await User.create({name:'Guest',email:'guest@test.com',password:'password1'});const category=await Category.create({name:'Tech'});event=await Event.create({name:'Msg Event',description:'Event for message tests',date:'2027-06-01',city:'Cairo',capacity:50,category:category.id,createdBy:admin.id})});afterAll(async()=>{if(mongoose.connection.readyState)await mongoose.disconnect();if(mongo)await mongo.stop()});
-test('message list is empty before any announcements',async()=>{const r=await request(app).get(`/api/events/${event.id}/messages`);expect(r.status).toBe(200);expect(r.body.data).toHaveLength(0)});
-test('admin creates a message and response includes populated sender',async()=>{const r=await request(app).post(`/api/events/${event.id}/messages`).set('Authorization',`Bearer ${token(admin)}`).send({text:'Hello attendees!'});expect(r.status).toBe(201);expect(r.body.data.text).toBe('Hello attendees!');expect(r.body.data.sender.name).toBe('Admin');expect(r.body.data.sender.role).toBe('admin')});
-test('message list returns messages in chronological order',async()=>{await request(app).post(`/api/events/${event.id}/messages`).set('Authorization',`Bearer ${token(admin)}`).send({text:'Second announcement'});const r=await request(app).get(`/api/events/${event.id}/messages`);expect(r.status).toBe(200);expect(r.body.data.length).toBeGreaterThanOrEqual(2);expect(new Date(r.body.data[0].createdAt)<=new Date(r.body.data[1].createdAt)).toBe(true)});
-test('attendee cannot post an announcement',async()=>{const r=await request(app).post(`/api/events/${event.id}/messages`).set('Authorization',`Bearer ${token(attendee)}`).send({text:'Attendee message'});expect(r.status).toBe(403)});
-test('empty message text returns 422',async()=>{const r=await request(app).post(`/api/events/${event.id}/messages`).set('Authorization',`Bearer ${token(admin)}`).send({text:''});expect(r.status).toBe(422)});
-test('message list returns 422 for invalid eventId',async()=>{const r=await request(app).get('/api/events/not-an-id/messages');expect(r.status).toBe(422)});
+process.env.NODE_ENV = 'test';
+process.env.JWT_SECRET = 'test-secret-long-enough';
+jest.setTimeout(180000);
+
+const request = require('supertest');
+const { MongoMemoryServer } = require('mongodb-memory-server');
+const mongoose = require('mongoose');
+const jwt = require('jsonwebtoken');
+const app = require('../src/app');
+const User = require('../src/models/User');
+const Category = require('../src/models/Category');
+const Event = require('../src/models/Event');
+
+let mongo, admin, attendee, event;
+const token = (u) => jwt.sign({ id: u.id, role: u.role }, process.env.JWT_SECRET);
+
+beforeAll(async () => {
+  mongo = await MongoMemoryServer.create();
+  await mongoose.connect(mongo.getUri());
+  admin = await User.create({ name: 'Admin', email: 'admin@test.com', password: 'password1', role: 'admin' });
+  attendee = await User.create({ name: 'Guest', email: 'guest@test.com', password: 'password1' });
+  const category = await Category.create({ name: 'Tech' });
+  event = await Event.create({
+    name: 'Msg Event',
+    description: 'Event for message tests',
+    date: '2027-06-01',
+    city: 'Cairo',
+    capacity: 50,
+    category: category.id,
+    createdBy: admin.id,
+  });
+});
+
+afterAll(async () => {
+  if (mongoose.connection.readyState) await mongoose.disconnect();
+  if (mongo) await mongo.stop();
+});
+
+test('message list is empty before any announcements', async () => {
+  const r = await request(app).get(`/api/events/${event.id}/messages`);
+  expect(r.status).toBe(200);
+  expect(r.body.data).toHaveLength(0);
+});
+
+test('admin creates a message and response includes populated sender', async () => {
+  const r = await request(app)
+    .post(`/api/events/${event.id}/messages`)
+    .set('Authorization', `Bearer ${token(admin)}`)
+    .send({ text: 'Hello attendees!' });
+  expect(r.status).toBe(201);
+  expect(r.body.data.text).toBe('Hello attendees!');
+  expect(r.body.data.sender.name).toBe('Admin');
+  expect(r.body.data.sender.role).toBe('admin');
+});
+
+test('message list returns messages in chronological order', async () => {
+  await request(app)
+    .post(`/api/events/${event.id}/messages`)
+    .set('Authorization', `Bearer ${token(admin)}`)
+    .send({ text: 'Second announcement' });
+  const r = await request(app).get(`/api/events/${event.id}/messages`);
+  expect(r.status).toBe(200);
+  expect(r.body.data.length).toBeGreaterThanOrEqual(2);
+  expect(new Date(r.body.data[0].createdAt) <= new Date(r.body.data[1].createdAt)).toBe(true);
+});
+
+test('attendee cannot post an announcement', async () => {
+  const r = await request(app)
+    .post(`/api/events/${event.id}/messages`)
+    .set('Authorization', `Bearer ${token(attendee)}`)
+    .send({ text: 'Attendee message' });
+  expect(r.status).toBe(403);
+});
+
+test('empty message text returns 422', async () => {
+  const r = await request(app)
+    .post(`/api/events/${event.id}/messages`)
+    .set('Authorization', `Bearer ${token(admin)}`)
+    .send({ text: '' });
+  expect(r.status).toBe(422);
+});
+
+test('message list returns 422 for invalid eventId', async () => {
+  const r = await request(app).get('/api/events/not-an-id/messages');
+  expect(r.status).toBe(422);
+});
