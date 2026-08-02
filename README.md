@@ -52,5 +52,5 @@ Run `npm test`. Before submission, replace example secrets, deploy to Vercel wit
 ### Final test evidence
 
 - Jest unit tests cover `AppError` and `asyncHandler` success/failure behavior.
-- Supertest integration tests cover event creation, listing, combined filtering, category population, role protection, 422 validation, registration uniqueness, capacity, cancellation and freed-place reuse.
-- Final verification: **8 tests passed in 2 suites** and production `/`, `/health`, `/api/events`, and `/api-docs` returned HTTP 200.
+- Supertest integration tests cover: auth registration, duplicate email, JWT login, `/me` authentication; event creation, listing, combined filtering, category population, role protection, 422 validation; registration uniqueness, capacity, cancellation and freed-place reuse; message creation with populated sender, chronological listing, attendee restriction, and validation.
+- Final verification: **21 tests passed in 4 suites** and production `/`, `/health`, `/api/events`, and `/api-docs` returned HTTP 200.
