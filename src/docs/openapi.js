@@ -8,6 +8,20 @@
  *   get:
  *     summary: Health check
  *     responses: {'200': {description: Server and database state}}
+ * /api/categories:
+ *   get:
+ *     summary: List all categories
+ *     responses: {'200': {description: Sorted category list}}
+ *   post:
+ *     summary: Create a category (admin only)
+ *     security: [{bearerAuth: []}]
+ *     requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/CategoryInput'}}}}
+ *     responses: {'201': {description: Created category}, '401': {description: Unauthenticated}, '403': {description: Forbidden}, '409': {description: Duplicate name}, '422': {description: Invalid input}}
+ * /api/categories/{id}:
+ *   parameters: [{in: path, name: id, required: true, schema: {type: string}}]
+ *   get:
+ *     summary: Show a single category
+ *     responses: {'200': {description: Category}, '404': {description: Category not found}, '422': {description: Invalid ObjectId}}
  * /api/auth/register:
  *   post:
  *     summary: Register an attendee

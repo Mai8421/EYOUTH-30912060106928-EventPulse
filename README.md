@@ -33,6 +33,10 @@ A complete event-management backend built with Node.js, Express, MongoDB/Mongoos
 | Method | Path | Access |
 |---|---|---|
 | POST | `/api/auth/register`, `/api/auth/login` | Public |
+| GET | `/api/auth/me` | Authenticated |
+| GET | `/api/categories` | Public |
+| GET | `/api/categories/:id` | Public |
+| POST | `/api/categories` | Admin |
 | GET/POST | `/api/events` | Public/Admin |
 | GET/PATCH/DELETE | `/api/events/:id` | Public/Admin/Admin |
 | POST | `/api/registrations/events/:eventId` | Authenticated |
@@ -52,5 +56,6 @@ Run `npm test`. Before submission, replace example secrets, deploy to Vercel wit
 ### Final test evidence
 
 - Jest unit tests cover `AppError` and `asyncHandler` success/failure behavior.
-- Supertest integration tests cover event creation, listing, combined filtering, category population, role protection, 422 validation, registration uniqueness, capacity, cancellation and freed-place reuse.
-- Final verification: **8 tests passed in 2 suites** and production `/`, `/health`, `/api/events`, and `/api-docs` returned HTTP 200.
+- Supertest integration tests cover: auth registration, duplicate email, JWT login, `/me` authentication; event creation, listing, combined filtering, category population, role protection, 422 validation; registration uniqueness, capacity, cancellation and freed-place reuse; message creation with populated sender, chronological listing, attendee restriction, and validation.
+- Socket.io integration tests cover: unauthenticated connection rejection, authenticated connection, join-event success and failure acknowledgments, admin broadcast received by room listeners, and attendee broadcast restriction.
+- Final verification: **37 tests passed in 6 suites** and production `/`, `/health`, `/api/events`, and `/api-docs` returned HTTP 200.
