@@ -1,1 +1,1 @@
-{"version":2,"builds":[{"src":"api/index.js","use":"@vercel/node"}],"routes":[{"src":"/(.*)","dest":"api/index.js"}]}
+{"version":2,"builds":[{"src":"api/socket-io.js","use":"@vercel/node"},{"src":"api/index.js","use":"@vercel/node"}],"routes":[{"src":"/api/socket-io/socket.io/(.*)","dest":"api/socket-io.js"},{"src":"/(.*)","dest":"api/index.js"}]}
