@@ -1,1 +1,1 @@
-{"rewrites":[{"source":"/api/socket-io/socket.io/:path*","destination":"/api/socket-io"},{"source":"/:path*","destination":"/api"}]}
+{"version":2,"routes":[{"src":"/api/socket-io/socket.io/(.*)","dest":"/api/socket-io"},{"src":"/(.*)","dest":"/api"}]}
