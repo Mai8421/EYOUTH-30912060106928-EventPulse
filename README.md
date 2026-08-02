@@ -41,7 +41,9 @@ A complete event-management backend built with Node.js, Express, MongoDB/Mongoos
 | GET/POST | `/api/events/:eventId/messages` | Public/Admin |
 | GET | `/health`, `/api-docs` | Public |
 
-Use `Authorization: Bearer TOKEN` for protected routes. Socket clients authenticate with `auth.token`, emit `join-event` with an event ID, and listen for `announcement`.
+Use `Authorization: Bearer TOKEN` for protected routes. Local Socket.io clients authenticate with `auth.token`, emit `join-event` with an event ID, and listen for `announcement`.
+
+For the Vercel deployment, connect Socket.io to the production domain with `path: '/api/socket-io/socket.io'` and `transports: ['websocket']`. Authenticated attendees emit `join-event`; admins emit `broadcast` with `{ eventId, text }`. Every broadcast is saved in MongoDB before the event room receives `announcement`.
 
 ## Testing and delivery
 
