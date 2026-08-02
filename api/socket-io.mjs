@@ -47,6 +47,7 @@ io.on('connection', (socket) => {
       const text = String(payload.text || '').trim();
       if (!text || text.length > 1000) return acknowledge({ success: false, message: 'Invalid announcement' });
       const message = await Message.create({ event: event.id, sender: socket.user.id, text });
+      await message.populate('sender', 'name role');
       io.to(`event:${event.id}`).emit('announcement', message);
       acknowledge({ success: true, data: message });
     } catch (_error) {
